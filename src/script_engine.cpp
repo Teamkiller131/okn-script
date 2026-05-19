@@ -1,3 +1,4 @@
+#ifdef OKN_SCRIPT_HAS_LUA
 #include <okn/script/script_engine.hpp>
 #include <algorithm>
 
@@ -52,3 +53,5 @@ auto ScriptEngine::eval(const std::string& code) -> bool
 }
 
 } // namespace okn::script
+
+#endif

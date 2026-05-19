@@ -1,3 +1,4 @@
+#ifdef OKN_SCRIPT_HAS_LUA
 #include <okn/script/hotreload/hot_reload.hpp>
 #include <okn/script/runtime/lua_runtime.hpp>
 #include <okn/platform/fs/fs_info.hpp>
@@ -48,3 +49,5 @@ void HotReload::set_callback(std::function<void(const std::string&)> on_reload)
 }
 
 } // namespace okn::script
+
+#endif

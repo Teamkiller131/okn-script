@@ -1,3 +1,4 @@
+#ifdef OKN_SCRIPT_HAS_LUA
 #include <okn/script/binding/engine_binding.hpp>
 #include <okn/script/runtime/lua_runtime.hpp>
 #include <lua.hpp>
@@ -368,3 +369,5 @@ auto EngineBindings::register_all(LuaContext& ctx) -> void
 }
 
 } // namespace okn::script
+
+#endif

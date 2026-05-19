@@ -1,11 +1,6 @@
 #pragma once
 
-#if defined(OKN_SCRIPT_HAS_LUA)
-#include <lua.hpp>
-#endif
-
 #include <okn/script/script_types.hpp>
-#include <lua.hpp>
 #include <string>
 
 namespace okn::script {
@@ -28,16 +23,15 @@ public:
     auto load_string(const std::string& code, const std::string& name = "inline") -> bool override;
     auto load_file(const std::string& path) -> bool override;
     auto call(const std::string& function, f32 arg = 0.0f) -> bool override;
-    auto is_valid() const noexcept -> bool override { return state_ != nullptr; }
+    auto is_valid() const noexcept -> bool override;
+    auto get_state() -> void*; // internal: returns lua_State* cast to void*
 
-    auto get_state() -> lua_State* { return state_; }
-    void register_function(const std::string& name, lua_CFunction fn);
-
-    template <class T>
-    void set_global(const std::string& name, const T& value);
+    void register_function(const std::string& name, void* fn);
+    template <class T> void set_global(const std::string& name, const T& value);
 
 private:
-    lua_State* state_ = nullptr;
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 } // namespace okn::script
