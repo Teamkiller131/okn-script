@@ -368,6 +368,81 @@ auto EngineBindings::register_all(LuaContext& ctx) -> void
     register_input(ctx);
 }
 
+
+// ── Extended bindings ──
+
+static auto l_timing_now(lua_State* L) -> int {
+    lua_pushnumber(L, 0.0);
+    return 1;
+}
+
+static auto l_vec2_new(lua_State* L) -> int {
+    float x = (float)luaL_optnumber(L, 1, 0);
+    float y = (float)luaL_optnumber(L, 2, 0);
+    auto* v = static_cast<float*>(lua_newuserdata(L, 8));
+    v[0] = x; v[1] = y;
+    luaL_setmetatable(L, "okn.Vec2");
+    return 1;
+}
+
+static auto l_quat_identity(lua_State* L) -> int {
+    auto* q = static_cast<float*>(lua_newuserdata(L, 16));
+    q[0]=0;q[1]=0;q[2]=0;q[3]=1;
+    luaL_setmetatable(L, "okn.Quat");
+    return 1;
+}
+
+static auto l_log_info(lua_State* L) -> int {
+    const char* msg = luaL_checkstring(L, 1);
+    (void)msg;
+    return 0;
+}
+
+static auto l_delta_time(lua_State* L) -> int {
+    lua_pushnumber(L, 0.016);
+    return 1;
+}
+
+void EngineBindings::register_extended(LuaContext& ctx) {
+    auto L = reinterpret_cast<lua_State*>(ctx.get_state());
+    if (!L) return;
+
+    // Vec2 metatable
+    luaL_newmetatable(L, "okn.Vec2");
+    lua_pushstring(L, "__index");
+    lua_newtable(L);
+    lua_pushcfunction(L, [](lua_State* L2)->int{
+        auto* v=static_cast<float*>(luaL_checkudata(L2,1,"okn.Vec2"));
+        const char* f=luaL_checkstring(L2,2);
+        if(strcmp(f,"x")==0){lua_pushnumber(L2,v[0]);return 1;}
+        if(strcmp(f,"y")==0){lua_pushnumber(L2,v[1]);return 1;}
+        return 0;
+    });
+    lua_setfield(L,-2,"__index");
+    lua_pop(L,1);
+
+    // Quat metatable
+    luaL_newmetatable(L, "okn.Quat");
+    lua_pushstring(L, "__index");
+    lua_newtable(L);
+    lua_pushcfunction(L, [](lua_State* L2)->int{
+        auto* q=static_cast<float*>(luaL_checkudata(L2,1,"okn.Quat"));
+        const char* f=luaL_checkstring(L2,2);
+        if(strcmp(f,"x")==0){lua_pushnumber(L2,q[0]);return 1;}
+        if(strcmp(f,"y")==0){lua_pushnumber(L2,q[1]);return 1;}
+        if(strcmp(f,"z")==0){lua_pushnumber(L2,q[2]);return 1;}
+        if(strcmp(f,"w")==0){lua_pushnumber(L2,q[3]);return 1;}
+        return 0;
+    });
+    lua_setfield(L,-2,"__index");
+    lua_pop(L,1);
+
+    // Global functions
+    lua_register(L, "vec2", l_vec2_new);
+    lua_register(L, "quat", l_quat_identity);
+    lua_register(L, "log_info", l_log_info);
+    lua_register(L, "delta_time", l_delta_time);
+}
 } // namespace okn::script
 
 #endif
