@@ -1,4 +1,3 @@
-﻿// Created by Teamkiller on 2025/12/23.
-//
-
-// runtime.cpp
+﻿#include <okn/script/runtime/runtime.hpp>
+namespace okn::script {
+} // namespace okn::script

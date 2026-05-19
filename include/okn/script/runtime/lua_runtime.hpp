@@ -24,7 +24,7 @@ public:
     auto load_file(const std::string& path) -> bool override;
     auto call(const std::string& function, f32 arg = 0.0f) -> bool override;
     auto is_valid() const noexcept -> bool override;
-    auto get_state() -> void*; // internal: returns lua_State* cast to void*
+    auto get_state() -> void*;
 
     void register_function(const std::string& name, void* fn);
     template <class T> void set_global(const std::string& name, const T& value);
