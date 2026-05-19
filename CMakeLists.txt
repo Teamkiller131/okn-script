@@ -27,6 +27,17 @@ file(GLOB_RECURSE ${PROJECT_NAME}_SRC
 add_library(${PROJECT_NAME} STATIC ${${PROJECT_NAME}_SRC})
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
+# Lua runtime
+find_package(Lua QUIET)
+if(LUA_FOUND)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${LUA_INCLUDE_DIR})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${LUA_LIBRARIES})
+    target_compile_definitions(${PROJECT_NAME} PUBLIC OKN_SCRIPT_HAS_LUA=1)
+endif()
+
+# Dependencies
+target_link_libraries(${PROJECT_NAME} PUBLIC okn-core okn-platform)
+
 # Compile definitions
 if(OKN_SCRIPT_ENABLE_LUA)
     target_compile_definitions(${PROJECT_NAME} PUBLIC OKN_SCRIPT_ENABLE_LUA=1)
