@@ -35,6 +35,20 @@ if(LUA_FOUND)
     target_compile_definitions(${PROJECT_NAME} PUBLIC OKN_SCRIPT_HAS_LUA=1)
 endif()
 
+# sol2 engine bindings (Lua usertypes for vec3/entity/world/input). Header-only;
+# the sol2-heavy binding TU relaxes /WX (sol2 headers aren't warning-clean).
+find_package(sol2 CONFIG QUIET)
+if(LUA_FOUND AND sol2_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE sol2::sol2)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE OKN_SCRIPT_HAS_SOL2=1)
+    if(MSVC)
+        set_source_files_properties(
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/binding/engine_binding.cpp"
+            "${CMAKE_CURRENT_SOURCE_DIR}/src/runtime/lua_runtime.cpp"
+            PROPERTIES COMPILE_OPTIONS "/WX-")
+    endif()
+endif()
+
 # Dependencies
 target_link_libraries(${PROJECT_NAME} PUBLIC okn-core okn-platform)
 

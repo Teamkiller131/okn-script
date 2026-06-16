@@ -11,5 +11,18 @@ if(${TESTS_TARGET}_SRC)
     add_executable(${TESTS_TARGET} ${${TESTS_TARGET}_SRC})
     target_link_libraries(${TESTS_TARGET} PRIVATE okn-script)
     target_compile_features(${TESTS_TARGET} PRIVATE cxx_std_23)
+
+    # sol2-based engine-binding test (real Lua usertypes).
+    find_package(sol2 CONFIG QUIET)
+    find_package(Lua QUIET)
+    if(sol2_FOUND AND LUA_FOUND)
+        target_link_libraries(${TESTS_TARGET} PRIVATE sol2::sol2)
+        target_compile_definitions(${TESTS_TARGET} PRIVATE OKN_SCRIPT_HAS_SOL2=1)
+        if(MSVC)
+            set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/test_binding.cpp"
+                PROPERTIES COMPILE_OPTIONS "/WX-")
+        endif()
+    endif()
+
     add_test(NAME ${TESTS_TARGET} COMMAND ${TESTS_TARGET})
 endif()
