@@ -24,7 +24,7 @@ TEST_CASE("okn::script::ScriptEngine - create and default context") {
     CHECK(ctx->is_valid());
 }
 
-TEST_CASE("okn::script::ScriptEngine - eval lua code" * doctest::skip()) {
+TEST_CASE("okn::script::ScriptEngine - eval lua code") {
     ScriptEngine engine;
     bool ok = engine.eval("x = 42");
     CHECK(ok);
@@ -37,7 +37,7 @@ TEST_CASE("okn::script::ScriptEngine - eval lua code" * doctest::skip()) {
     lua_pop(L, 1);
 }
 
-TEST_CASE("okn::script::LuaContext - load and call function" * doctest::skip()) {
+TEST_CASE("okn::script::LuaContext - load and call function") {
     LuaRuntime runtime;
     auto* raw_ctx = runtime.create_context();
     REQUIRE(raw_ctx != nullptr);
