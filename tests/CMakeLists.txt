@@ -23,6 +23,7 @@ if(${TESTS_TARGET}_SRC)
             set_source_files_properties(
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_binding.cpp"
                 "${CMAKE_CURRENT_SOURCE_DIR}/test_ecs_binding.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_lua_rules.cpp"
                 PROPERTIES COMPILE_OPTIONS "/WX-")
         endif()
     endif()
