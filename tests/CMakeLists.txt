@@ -16,10 +16,13 @@ if(${TESTS_TARGET}_SRC)
     find_package(sol2 CONFIG QUIET)
     find_package(Lua QUIET)
     if(sol2_FOUND AND LUA_FOUND)
-        target_link_libraries(${TESTS_TARGET} PRIVATE sol2::sol2)
+        # okn-ecs for the ScriptingBridge <-> sol2 binding test (test_ecs_binding.cpp).
+        target_link_libraries(${TESTS_TARGET} PRIVATE sol2::sol2 okn-ecs)
         target_compile_definitions(${TESTS_TARGET} PRIVATE OKN_SCRIPT_HAS_SOL2=1)
         if(MSVC)
-            set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/test_binding.cpp"
+            set_source_files_properties(
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_binding.cpp"
+                "${CMAKE_CURRENT_SOURCE_DIR}/test_ecs_binding.cpp"
                 PROPERTIES COMPILE_OPTIONS "/WX-")
         endif()
     endif()
