@@ -1,15 +1,15 @@
 #pragma once
 
 // Bridge okn-ecs's ScriptingBridge to sol2: bind a generic ECS surface into a Lua state
-// so a script drives the LIVE World — create/destroy entities, and add / has / query
-// components by their registered name. Header-only; include it where you already have
-// sol2 + okn-ecs. `world` and `bridge` must outlive the Lua state (the bound closures
-// capture them by reference).
+// so a script drives the LIVE World — create/destroy entities, add / has / query
+// components by their registered name, and (for components registered WITH FieldDescs)
+// read/write scalar fields generically via get_field/set_field. Header-only; include it
+// where you already have sol2 + okn-ecs. `world` and `bridge` must outlive the Lua
+// state (the bound closures capture them by reference).
 //
-// Component FIELD read/write is intentionally game-specific: register each component as
-// a sol2 usertype and a getter over bridge.component_data(e, name) — see the test for
-// the pattern. (A generic by-name field surface would need per-field reflection the ECS
-// deliberately doesn't carry.)
+// For heavy per-component APIs a sol2 usertype over bridge.component_data(e, name) is
+// still the richer pattern (see the test); get_field/set_field covers the common case
+// with zero per-game binding code.
 
 #if defined(_MSC_VER)
 #pragma warning(push, 0)
@@ -21,6 +21,8 @@
 
 #include <okn/ecs/world.hpp>
 #include <okn/ecs/scripting/scripting_bridge.hpp>
+
+#include <cstdint>
 
 namespace okn::script {
 
@@ -49,6 +51,41 @@ inline void bind_ecs(sol::state_view lua, okn::ecs::World& world,
     });
     lua.set_function("query", [&bridge](const char* name) {
         return sol::as_table(bridge.query(name));   // Lua table of Entity handles
+    });
+
+    // Generic scalar field access over the bridge's opt-in per-field reflection.
+    // Numbers cross the boundary as Lua numbers (doubles); nil / false on a miss.
+    using FieldType = okn::ecs::ScriptingBridge::FieldDesc::Type;
+    lua.set_function("get_field",
+                     [&bridge](Entity e, const char* comp, const char* field)
+                         -> sol::optional<double> {
+        const auto* fd = bridge.find_field(comp, field);
+        void* p = bridge.field_data(e, comp, field);
+        if (fd == nullptr || p == nullptr) { return sol::nullopt; }
+        switch (fd->type) {
+            case FieldType::kF32: return static_cast<double>(*static_cast<float*>(p));
+            case FieldType::kF64: return *static_cast<double*>(p);
+            case FieldType::kI32: return static_cast<double>(*static_cast<std::int32_t*>(p));
+            case FieldType::kU32: return static_cast<double>(*static_cast<std::uint32_t*>(p));
+            case FieldType::kU8:  return static_cast<double>(*static_cast<std::uint8_t*>(p));
+            case FieldType::kBool: return *static_cast<bool*>(p) ? 1.0 : 0.0;
+        }
+        return sol::nullopt;
+    });
+    lua.set_function("set_field",
+                     [&bridge](Entity e, const char* comp, const char* field, double v) -> bool {
+        const auto* fd = bridge.find_field(comp, field);
+        void* p = bridge.field_data(e, comp, field);
+        if (fd == nullptr || p == nullptr) { return false; }
+        switch (fd->type) {
+            case FieldType::kF32: *static_cast<float*>(p) = static_cast<float>(v); break;
+            case FieldType::kF64: *static_cast<double*>(p) = v; break;
+            case FieldType::kI32: *static_cast<std::int32_t*>(p) = static_cast<std::int32_t>(v); break;
+            case FieldType::kU32: *static_cast<std::uint32_t*>(p) = static_cast<std::uint32_t>(v); break;
+            case FieldType::kU8:  *static_cast<std::uint8_t*>(p) = static_cast<std::uint8_t>(v); break;
+            case FieldType::kBool: *static_cast<bool*>(p) = v != 0.0; break;
+        }
+        return true;
     });
 }
 

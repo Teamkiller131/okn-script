@@ -83,4 +83,53 @@ TEST_CASE("okn-script: a Lua script drives the live okn-ecs World via the Script
     rt.destroy_context(ctx);
 }
 
+TEST_CASE("okn-script: generic get_field/set_field via the bridge's per-field reflection") {
+    // The per-field descriptor layer: register Pos WITH FieldDescs and Lua reads/writes
+    // its scalars by NAME — no usertype, no per-game binding code.
+    using FieldDesc = okn::ecs::ScriptingBridge::FieldDesc;
+    okn::ecs::World world;
+    okn::ecs::ScriptingBridge bridge(world);
+    bridge.register_component<Pos>(
+        "Pos", {FieldDesc{"x", offsetof(Pos, x), FieldDesc::Type::kF64},
+                FieldDesc{"y", offsetof(Pos, y), FieldDesc::Type::kF64}});
+    bridge.register_component<Vel>("Vel");   // opaque: no field descriptors
+
+    LuaRuntime rt;
+    auto* ctx = static_cast<LuaContext*>(rt.create_context());
+    REQUIRE(ctx != nullptr);
+    auto* L = static_cast<lua_State*>(ctx->get_state());
+    REQUIRE(L != nullptr);
+
+    const okn::ecs::Entity e = world.create_entity();
+    world.add_component(e, Pos{3.0, 4.0});
+
+    {
+        sol::state_view lua(L);
+        bind_ecs(lua, world, bridge);
+        lua["e"] = e;
+
+        auto res = lua.safe_script(R"LUA(
+            x0 = get_field(e, "Pos", "x")            -- 3
+            ok = set_field(e, "Pos", "y", 42.5)      -- true
+            y1 = get_field(e, "Pos", "y")            -- 42.5
+            miss = get_field(e, "Pos", "nope")       -- nil (unknown field)
+            opaque = get_field(e, "Vel", "dx")       -- nil (no descriptors registered)
+        )LUA", sol::script_pass_on_error);
+        REQUIRE(res.valid());
+
+        CHECK(lua["x0"].get<double>() == doctest::Approx(3.0));
+        CHECK(lua["ok"].get<bool>() == true);
+        CHECK(lua["y1"].get<double>() == doctest::Approx(42.5));
+        CHECK(lua["miss"].valid() == false);
+        CHECK(lua["opaque"].valid() == false);
+    }
+
+    // The write landed in the LIVE store C++ sees.
+    const Pos* p = world.get_component<Pos>(e);
+    REQUIRE(p != nullptr);
+    CHECK(p->y == doctest::Approx(42.5));
+
+    rt.destroy_context(ctx);
+}
+
 #endif
